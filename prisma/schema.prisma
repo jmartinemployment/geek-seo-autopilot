@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["seo"]
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  plan      String   @default("free")
+  createdAt DateTime @default(now())
+  sites     Site[]
+
+  @@schema("seo")
+}
+
+// ── Core SEO (SEO.ai scope) ────────────────────────────────────────────────
+
+model Site {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  name          String
+  domain        String
+  cmsType       String   @default("wordpress")
+  cmsApiUrl     String?
+  cmsApiKey     String?
+  cmsSiteId     String?
+  language      String   @default("en")
+  postFrequency String   @default("weekly")
+  autoPublish   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  articles        Article[]
+  keywords        Keyword[]
+  analytics       Analytics[]
+  contentCalendar ContentCalendar[]
+  brandVoices     BrandVoice[]
+  audiences       Audience[]
+  knowledgeBase   KnowledgeBase[]
+  campaigns       Campaign[]
+
+  @@schema("seo")
+}
+
+model Article {
+  id               String    @id @default(cuid())
+  siteId           String
+  site             Site      @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  title            String
+  slug             String
+  content          String    @db.Text
+  metaTitle        String?
+  metaDescription  String?
+  targetKeyword    String
+  wordCount        Int       @default(0)
+  seoScore         Int       @default(0)
+  readabilityScore Int       @default(0)
+  status           String    @default("draft")
+  publishedAt      DateTime?
+  cmsPostId        String?
+  internalLinks    Json?
+  featuredImageUrl String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@schema("seo")
+}
+
+model Keyword {
+  id             String   @id @default(cuid())
+  siteId         String
+  site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  keyword        String
+  searchVolume   String?
+  difficulty     Int?
+  intent         String?
+  status         String   @default("discovered")
+  topicCluster   String?
+  longTail       Boolean  @default(false)
+  suggestedTitle String?
+  createdAt      DateTime @default(now())
+
+  @@schema("seo")
+}
+
+model Analytics {
+  id          String   @id @default(cuid())
+  siteId      String
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  date        DateTime
+  clicks      Int      @default(0)
+  impressions Int      @default(0)
+  position    Float    @default(0)
+  ctr         Float    @default(0)
+  keyword     String?
+  page        String?
+  createdAt   DateTime @default(now())
+
+  @@schema("seo")
+}
+
+model ContentCalendar {
+  id          String   @id @default(cuid())
+  siteId      String
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  keyword     String
+  scheduledAt DateTime
+  status      String   @default("pending")
+  articleId   String?
+  createdAt   DateTime @default(now())
+
+  @@schema("seo")
+}
+
+// ── Brand / Jasper scope ──────────────────────────────────────────────────
+
+model BrandVoice {
+  id          String   @id @default(cuid())
+  siteId      String
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  toneWords   String[]
+  examples    String?  @db.Text
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@schema("seo")
+}
+
+model Audience {
+  id           String   @id @default(cuid())
+  siteId       String
+  site         Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?  @db.Text
+  demographics String?
+  painPoints   String?  @db.Text
+  goals        String?  @db.Text
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@schema("seo")
+}
+
+model KnowledgeBase {
+  id        String   @id @default(cuid())
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  name      String
+  type      String
+  content   String   @db.Text
+  sourceUrl String?
+  createdAt DateTime @default(now())
+
+  @@schema("seo")
+}
+
+model Campaign {
+  id        String          @id @default(cuid())
+  siteId    String
+  site      Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  name      String
+  brief     String?         @db.Text
+  status    String          @default("active")
+  startDate DateTime?
+  endDate   DateTime?
+  assets    CampaignAsset[]
+  createdAt DateTime        @default(now())
+
+  @@schema("seo")
+}
+
+model CampaignAsset {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  type       String
+  title      String
+  content    String   @db.Text
+  platform   String?
+  status     String   @default("draft")
+  createdAt  DateTime @default(now())
+
+  @@schema("seo")
+}
+
+model ContentTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  description String?
+  prompt      String   @db.Text
+  fields      Json
+  isBuiltIn   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@schema("seo")
+}
